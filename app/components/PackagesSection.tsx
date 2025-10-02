@@ -41,33 +41,36 @@ export default function PackagesSection() {
       try {
         setLoading(true);
 
-        // First try to get from Cosmic Payments products
-        const cosmicProducts = await getProducts('all');
-        if (cosmicProducts && cosmicProducts.length > 0) {
-          const umrahPackages = cosmicProducts.map((product, index) => ({
-            id: product.product_id,
-            name: product.name,
-            duration: 14, // Default duration
-            price: product.prices[0]?.unitAmount / 100 || 2999,
-            currency: product.prices[0]?.currency || 'GBP',
-            hotelName: 'Luxury Hotel Near Haram',
-            hotelStars: 5,
-            distanceToHaram: '100m from Haram',
-            inclusions: ['Return Flights', 'Hotel Accommodation', 'Transport', 'Guidance'],
-            description: product.description || 'Premium Umrah package with luxury accommodations',
-            imageUrl: product.product_image_urls[0] || 'https://images.unsplash.com/photo-1571049813798-0c9e5e3b9b89',
-            rating: 4 + Math.random(),
-            reviewCount: Math.floor(Math.random() * 200) + 50,
-            isPopular: index === 0,
-            active: product.active
-          }));
-          setPackages(umrahPackages);
+        // Prefer database packages when available (ensures seeded data drives filters)
+        const dbRes = await fetch('/api/packages');
+        const dbData = await dbRes.json();
+        const dbPackages = Array.isArray(dbData?.packages) ? dbData.packages : [];
+        if (dbRes.ok && dbPackages.length > 0) {
+          setPackages(dbPackages);
         } else {
-          // Fallback to database packages
-          const response = await fetch('/api/packages');
-          const data = await response.json();
-          if (response.ok) {
-            setPackages(data.packages || []);
+          // Fallback to Cosmic Payments products
+          const cosmicProducts = await getProducts('all');
+          if (cosmicProducts && cosmicProducts.length > 0) {
+            const umrahPackages = cosmicProducts.map((product, index) => ({
+              id: product.product_id,
+              name: product.name,
+              duration: 14, // Default duration
+              price: product.prices[0]?.unitAmount / 100 || 2999,
+              currency: product.prices[0]?.currency || 'GBP',
+              hotelName: 'Luxury Hotel Near Haram',
+              hotelStars: 5,
+              distanceToHaram: '100m from Haram',
+              inclusions: ['Return Flights', 'Hotel Accommodation', 'Transport', 'Guidance'],
+              description: product.description || 'Premium Umrah package with luxury accommodations',
+              imageUrl: product.product_image_urls[0] || 'https://images.unsplash.com/photo-1571049813798-0c9e5e3b9b89',
+              rating: 4 + Math.random(),
+              reviewCount: Math.floor(Math.random() * 200) + 50,
+              isPopular: index === 0,
+              active: product.active
+            }));
+            setPackages(umrahPackages);
+          } else {
+            setPackages([]);
           }
         }
       } catch (error) {
@@ -115,7 +118,7 @@ export default function PackagesSection() {
     };
 
     fetchPackages();
-  }, []);
+  }, [getProducts]);
 
   const handleBooking = async (pkg: UmrahPackage) => {
     try {
