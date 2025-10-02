@@ -1,0 +1,9 @@
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/yourcpaneluser/DivinePathways # <--- CHANGE THIS
+    - /bin/cp -R * $DEPLOYPATH
+    - cd $DEPLOYPATH
+    - /usr/bin/npm install
+    # Add your start/restart command for your app here, e.g.,
+    # - /usr/bin/npm run build # if using Next.js/build step
+    # - /usr/bin/npx passenger-js restart
