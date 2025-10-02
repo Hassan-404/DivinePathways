@@ -32,7 +32,7 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     const user = await getServerSession();
-    if (!user || user.role !== 'admin') {
+    if (!user || !(user.role === 'admin' || user.email === process.env.SUPERUSER_EMAIL)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

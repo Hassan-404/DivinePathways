@@ -5,7 +5,7 @@ import { getServerSession } from 'cosmic-authentication';
 export async function GET(request: Request) {
   try {
     const user = await getServerSession();
-    if (!user || user.role !== 'admin') {
+    if (!user || !(user.role === 'admin' || user.email === process.env.SUPERUSER_EMAIL)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const user = await getServerSession();
-    if (!user || user.role !== 'admin') {
+    if (!user || !(user.role === 'admin' || user.email === process.env.SUPERUSER_EMAIL)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
