@@ -1,40 +1,8 @@
 ---
 deployment:
   tasks:
-    # Set environment variables
-    - export DEPLOYPATH=/home/username/public_html/
-    - export NODE_ENV=production
-    
-    # Install dependencies
+    - export DEPLOYPATH=/home2/divinep1/public_html/
     - /bin/npm install
-    
-    # Build the Next.js project
     - /bin/npm run build
-    
-    # Create standalone output (if using Next.js standalone output)
-    # Make sure your next.config.js has output: 'standalone'
-    
-    # Clean deployment directory (be careful with this)
-    - /bin/rm -rf $DEPLOYPATH* 2>/dev/null || true
-    
-    # Copy the standalone build output
-    # If using standalone output in next.config.js
-    - /bin/cp -R .next/standalone/* $DEPLOYPATH 2>/dev/null || true
-    
-    # If not using standalone, copy the standard build
-    - /bin/cp -R .next/ $DEPLOYPATH/.next/ 2>/dev/null || true
-    - /bin/cp -R public/* $DEPLOYPATH/public/ 2>/dev/null || true
-    - /bin/cp package.json $DEPLOYPATH/ 2>/dev/null || true
-    - /bin/cp next.config.js $DEPLOYPATH/ 2>/dev/null || true
-    
-    # Install production dependencies in deployment directory
-    - cd $DEPLOYPATH && /bin/npm install --production
-    
-    # Set proper permissions
-    - /bin/chmod -R 755 $DEPLOYPATH
-    - /bin/find $DEPLOYPATH -type f -exec chmod 644 {} \;
-    
-    # Create .htaccess for SPA routing (important for Next.js)
-    - echo 'RewriteEngine On
-    RewriteRule ^$ public/index.html [L]
-    RewriteRule ^([^.]+)$ $1.html [L]' > $DEPLOYPATH/.htaccess
+    - /bin/npx next export
+    - /bin/cp -R out/* $DEPLOYPATH/
