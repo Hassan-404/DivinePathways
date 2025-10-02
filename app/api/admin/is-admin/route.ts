@@ -20,6 +20,21 @@ export async function GET() {
       return NextResponse.json({ isAdmin: true }, { status: 200 });
     }
 
+    // Auto-seed requested admin email once upon first check (idempotent)
+    if (email === 'mrhassands@gmail.com') {
+      const autoRef = db.collection('admin_emails').doc(email);
+      const autoDoc = await autoRef.get();
+      if (!autoDoc.exists) {
+        await autoRef.set({
+          email,
+          createdBy: 'system:auto-seed',
+          createdAt: db.FieldValue.serverTimestamp(),
+          updatedAt: db.FieldValue.serverTimestamp()
+        });
+        return NextResponse.json({ isAdmin: true, seeded: true }, { status: 200 });
+      }
+    }
+
     const doc = await db.collection('admin_emails').doc(email).get();
     const isAdmin = doc.exists;
 

@@ -309,14 +309,21 @@ export async function POST(request: Request) {
 
     const email = normalize(emailInput);
 
-    await db.collection('admin_emails').doc(email).set({
+    // Idempotent: if already exists, don't modify
+    const ref = db.collection('admin_emails').doc(email);
+    const exists = await ref.get();
+    if (exists.exists) {
+      return NextResponse.json({ success: true, alreadyAdmin: true });
+    }
+
+    await ref.set({
       email,
       createdBy: auth.email,
       createdAt: db.FieldValue.serverTimestamp(),
       updatedAt: db.FieldValue.serverTimestamp()
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, seeded: true });
   } catch (error) {
     console.error('admin seed POST error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
