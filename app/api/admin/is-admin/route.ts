@@ -16,29 +16,14 @@ export async function GET() {
     const email = normalize(user.email);
     const superEmail = process.env.SUPERUSER_EMAIL ? normalize(process.env.SUPERUSER_EMAIL) : undefined;
 
-    if (user.role === 'admin' || (superEmail && email === superEmail)) {
-      return NextResponse.json({ isAdmin: true }, { status: 200 });
-    }
-
-    // Auto-seed requested admin email once upon first check (idempotent)
-    if (email === 'mrhassands@gmail.com') {
-      const autoRef = db.collection('admin_emails').doc(email);
-      const autoDoc = await autoRef.get();
-      if (!autoDoc.exists) {
-        await autoRef.set({
-          email,
-          createdBy: 'system:auto-seed',
-          createdAt: db.FieldValue.serverTimestamp(),
-          updatedAt: db.FieldValue.serverTimestamp()
-        });
-        return NextResponse.json({ isAdmin: true, seeded: true }, { status: 200 });
-      }
-    }
-
+    // Check allow-list collection
     const doc = await db.collection('admin_emails').doc(email).get();
-    const isAdmin = doc.exists;
+    const seeded = doc.exists;
 
-    return NextResponse.json({ isAdmin }, { status: 200 });
+    // Determine admin status
+    const isAdmin = seeded || user.role === 'admin' || (superEmail && email === superEmail);
+
+    return NextResponse.json({ isAdmin, seeded }, { status: 200 });
   } catch (error) {
     console.error('is-admin error:', error);
     return NextResponse.json({ isAdmin: false }, { status: 200 });
