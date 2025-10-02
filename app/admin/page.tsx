@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from 'cosmic-authentication';
 import { motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
@@ -14,24 +14,37 @@ import ContactInfoManager from '@/app/components/admin/ContactInfoManager';
 import Dashboard from '@/app/components/admin/Dashboard';
 
 export default function AdminPage() {
-  const { user, loading, isAuthenticated } = useAuth();
+  const { loading, isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
-  const superuserEmail = process.env.NEXT_PUBLIC_SUPERUSER_EMAIL;
+  useEffect(() => {
+    const check = async () => {
+      if (!isAuthenticated) {
+        setIsAdmin(false);
+        return;
+      }
+      try {
+        const res = await fetch('/api/admin/is-admin', { cache: 'no-store' });
+        const data = await res.json();
+        setIsAdmin(Boolean(data?.isAdmin));
+      } catch {
+        setIsAdmin(false);
+      }
+    };
+    check();
+  }, [isAuthenticated]);
 
-  // Redirect if not authenticated or not admin
-  if (loading) {
+  if (loading || isAdmin === null) {
     return (
       <div data-editor-id="app/admin/page.tsx:23:7" className="min-h-screen flex items-center justify-center">
         <div data-editor-id="app/admin/page.tsx:24:9" className="text-center">
           <Icon icon="material-symbols:sync" className="text-4xl text-amber-600 animate-spin mb-4" />
           <p data-editor-id="app/admin/page.tsx:26:11" className="text-gray-600">Loading...</p>
         </div>
-      </div>);
-
+      </div>
+    );
   }
-
-  const isAdmin = isAuthenticated && (user?.role === 'admin' || (superuserEmail && user?.email === superuserEmail));
 
   if (!isAdmin) {
     return (
@@ -39,8 +52,8 @@ export default function AdminPage() {
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="text-center max-w-md mx-auto p-8">
-
+          className="text-center max-w-md mx-auto p-8"
+        >
           <Icon icon="material-symbols:lock" className="text-6xl text-red-500 mb-4" />
           <h1 data-editor-id="app/admin/page.tsx:41:11" className="text-2xl font-bold text-gray-900 mb-4">
             <span data-editor-id="app/admin/page.tsx:39:13">Access Denied</span>
@@ -48,15 +61,16 @@ export default function AdminPage() {
           <p data-editor-id="app/admin/page.tsx:44:11" className="text-gray-600 mb-6">
             <span data-editor-id="app/admin/page.tsx:42:13">You need admin privileges to access this page.</span>
           </p>
-          <button data-editor-id="app/admin/page.tsx:47:11"
-          onClick={() => window.location.href = '/admin/login'}
-          className="bg-amber-600 text-white px-6 py-2 rounded-lg hover:bg-amber-700 transition-colors">
-
+          <button
+            data-editor-id="app/admin/page.tsx:47:11"
+            onClick={() => (window.location.href = '/admin/login')}
+            className="bg-amber-600 text-white px-6 py-2 rounded-lg hover:bg-amber-700 transition-colors"
+          >
             <span data-editor-id="app/admin/page.tsx:47:13">Sign in as Admin</span>
           </button>
         </motion.div>
-      </div>);
-
+      </div>
+    );
   }
 
   const renderContent = () => {
@@ -78,9 +92,5 @@ export default function AdminPage() {
     }
   };
 
-  return (
-    <AdminLayout activeTab={activeTab} setActiveTab={setActiveTab}>
-      {renderContent()}
-    </AdminLayout>);
-
+  return <AdminLayout activeTab={activeTab} setActiveTab={setActiveTab}>{renderContent()}</AdminLayout>;
 }
